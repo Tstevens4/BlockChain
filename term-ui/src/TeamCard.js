@@ -18,7 +18,7 @@ const styles = {
     },
 };
 
-function MediaCard(props) {
+function TeamCard(props) {
     const { classes } = props;
     return (
         <Card className={classes.card}>
@@ -50,8 +50,9 @@ function MediaCard(props) {
     );
 }
 
-MediaCard.propTypes = {
+TeamCard.propTypes = {
     classes: PropTypes.object.isRequired,
 };
 
-export withStyles(styles)(MediaCard);
+export default withStyles(styles)(TeamCard);
+
