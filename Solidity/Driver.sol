@@ -31,12 +31,10 @@ contract Driver {
     //Track bets
     mapping(address => Player) betters;
     address [] addrs;
-    mapping(address => uint) ownerBalance;
 
     //Ether holder
     uint pool = 0;
-
-
+    git
     //Stats of the 2 competing teams
     Team t1 = Team(0,0,0);
     Team t2 = Team(0,0,0);
@@ -104,12 +102,6 @@ contract Driver {
     function collectWinnings() public payable {
         require(gameCompleteFlag == true);
 
-        // If owner wants money, use other mapping
-        if (msg.sender == owner){
-            msg.sender.transfer(ownerBalance[owner]);
-            return;
-        }
-
         //Transfer the winner's ether to them, set balance to 0 to prevent multiple withdrawls
         msg.sender.transfer(betters[msg.sender].balance);
         delete betters[msg.sender];
@@ -134,7 +126,7 @@ contract Driver {
 
         //Deposit owner's share
         pool - (amtPerPlayer * 2);
-        ownerBalance[owner] += (amtPerPlayer*2);
+        betters[owner].balance += (amtPerPlayer*2);
 
         // Distribute ether to winning accounts
         for (uint i=0; i < addrs.length; i++){
