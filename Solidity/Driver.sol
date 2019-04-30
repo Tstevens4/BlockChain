@@ -34,7 +34,7 @@ contract Driver {
 
     //Ether holder
     uint pool = 0;
-    git
+
     //Stats of the 2 competing teams
     Team t1 = Team(0,0,0);
     Team t2 = Team(0,0,0);
