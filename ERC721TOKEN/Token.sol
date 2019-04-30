@@ -6,6 +6,9 @@ import './node_modules/openzeppelin-solidity/contracts/ownership/Ownable.sol';
 
 contract Fighters is ERC721, Ownable {
   constructor() ERC721() public {}
+  //will be used for the betting process.
+  uint256 public betting_start;
+  uint256 public betting_end;
 
   struct Fighter {
    //string Rarity; // Name of the Item
@@ -14,11 +17,25 @@ contract Fighters is ERC721, Ownable {
    uint AttackPower; // Amount of damage dealt | 16-50
    uint Defense; // Defence level from 0-15 | Reduce damage by level/100
   }
-
+  //all the fighters that are created
   Fighter[] internal fighters;
-  mapping (address => Fighter[]) internal ownedFighters;
+  //fighters qued for the fight (2 at a time)
+  uint[] QuedFighterIds;
+
+  // mapping token owners to tokens
+  // mapping (address => Fighter[]) internal ownedFighters;
   uint256 internal oneEther = 10000000;
-  
+
+  //bidder addreses
+  address[] bidders;
+  mapping(address => uint) public bids;
+  //mapping bidder addreses to qued fighter Ids
+  mapping(address => uint[]) public idsBidOn;
+  //Totalbids that have been made 
+  uint256 TotalAmountBet;
+
+
+
 //ONLY OWNER CAN CALL THIS FUNCTION 
 function CreateFighter() external onlyOwner{
     require(isOwner(), "only owner of the contract can call this function");
@@ -72,4 +89,29 @@ function CreateFighter() external onlyOwner{
     _burn(msg.sender, tokenId);
     return true;
   }
+  //Start the Fight by setting your fighter as a registered fighter
+  function RegisterFighter(uint fighterId) public returns(bool){
+    require(QuedFighterIds.length < 3, "There is already 2 Fighters In que the fight will start soon");
+    require(ownerOf(fighterId) == msg.sender, "You need to own The fighters to start a fight");
+    QuedFighterIds.push(fighterId);
+    if(QuedFighterIds.length == 2){
+      betting_start=now;
+      betting_end = betting_start + 15 minutes;
+    }
+    return true;
+  }
+  // after the fighters are in que start betting session
+  function BettingSession(uint fighterId) public payable{
+    require(QuedFighterIds.length > 1 , "The arent Enough Fighters in the que for the Betting Session To start yet ");
+    require(msg.value > 1000, "Lowest bet  accepted is 1000 wei" );
+    require(betting_end > now, "The betting window has closed wait for another fight" );
+    require(QuedFighterIds[0] == fighterId || QuedFighterIds[1] == fighterId, "The fighter you selected does not apper to be qued for betting");
+    TotalAmountBet = msg.value + TotalAmountBet;
+    
+    bidders.push(msg.sender);
+
+
+  }
+
+
 }
