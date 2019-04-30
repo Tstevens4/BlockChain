@@ -20,7 +20,7 @@ contract Fighters is ERC721, Ownable {
   uint256 internal oneEther = 10000000;
   
 //ONLY OWNER CAN CALL THIS FUNCTION 
-function CreateFighter() external   {
+function CreateFighter() external onlyOwner{
     require(isOwner(), "only owner of the contract can call this function");
     Fighter memory _fighter = Fighter(random(40) + 160, random(7) + 4, random(30) + 20, random(15) + 2 ); 
     uint _id = fighters.push(_fighter) - 1;
