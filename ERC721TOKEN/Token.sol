@@ -169,14 +169,15 @@ function CreateFighter() external onlyOwner{
           burnToken(QuedFighterIds[0]);
       }
 
+      //Distribute ether to winners
+      distributeEther();
+      //Reset the game state for the next round
       resetArena();
   }
 
   function resetArena () public {
       QuedFighterIds.length = 0;
-      for (uint i = 0; i < bidders.length; i++){
-          delete bids[bidders[i]];
-      }
+      bidders.length = 0;
   }
 
 }
