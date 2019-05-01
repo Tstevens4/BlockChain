@@ -2,12 +2,12 @@ pragma solidity ^0.5.2;
 
 import './node_modules/openzeppelin-solidity/contracts/token/ERC721/ERC721.sol';
 import './node_modules/openzeppelin-solidity/contracts/ownership/Ownable.sol';
-import "./truffle_stuff/output.sol";
+
 
 
 contract Fighters is ERC721, Ownable {
   constructor() ERC721() public {
-		address contractOwner = msg.sender;
+		//address contractOwner = msg.sender;
 	}
   //will be used for the betting process.
   uint256 public betting_start;
@@ -82,7 +82,7 @@ function CreateFighter() external onlyOwner{
     _mint(msg.sender, _id);
   }
 
-  function getFighterFromId(uint id) public view returns( uint, uint, uint, uint) {
+  function getFighterFromId(uint id) public view returns( uint, uint, uint, uint  ) {
     return (fighters[id].Health, fighters[id].Speed, fighters[id].AttackPower, fighters[id].Defense);
   }
 
@@ -126,61 +126,61 @@ function CreateFighter() external onlyOwner{
     bidders.push(msg.sender);
   }
 
-  function Fight() public {
-      //Choose who fights first
-      uint[] f1 = getFighterFromId(QuedFighterIds[0]);
-      uint[] f2 = getFighterFromId(QuedFighterIds[1]);
+  // function Fight() public {
+  //     //Choose who fights first
+  //     (uint  healthf1, uint  speedf1, uint  powerf1, uint  defensef1 )  = (getFighterFromId(QuedFighterIds[0]));
+  //     (uint  healthf2, uint  speedf2, uint  powerf2, uint  defensef2) = getFighterFromId(QuedFighterIds[1]);
 
-      fightOver = false;
+  //     fightOver = false;
 
       // Access each attribute via the array
       // Health - 0
       // Speed - 1
       // Attack - 2
       // Defense - 3
-      if (f1[1] > f2[1]){
-          // F1 fights first
-          while (!fightOver){
-              f2[0] -= (f1[2] - f2[3]);
-              if (f2[0] <= 0){
-                  //Fighter is defeated
-                  winningFighterID = QuedFighterIds[0];
-                  fightOver = true;
-              }
-              f1[0] -= (f2[2] - f1[3]);
-              if (f1[0] <= 0){
-                  winningFighterID = QuedFighterIds[1];
-                  fightOver = true;
-              }
-          }
-      } else {
-          // F2 fights first
-          while(!fightOver){
-              f1[0] -= (f2[2] - f1[3]);
-              if (f1[0] <= 0){
-                  winningFighterID = QuedFighterIds[1];
-                  fightOver = true;
-              }
-              f2[0] -= (f1[2] - f2[3]);
-              if (f2[0] <= 0){
-                  winningFighterID = QuedFighterIds[0];
-                  fightOver = true;
-              }
-          }
-      }
+      // if (speedf1> speedf2){
+      //     // F1 fights first
+      //     while (!fightOver){
+      //         f2[0] -= (f1[2] - f2[3]);
+      //         if (f2[0] <= 0){
+      //             //Fighter is defeated
+      //             winningFighterID = QuedFighterIds[0];
+      //             fightOver = true;
+      //         }
+      //         f1[0] -= (f2[2] - f1[3]);
+      //         if (f1[0] <= 0){
+      //             winningFighterID = QuedFighterIds[1];
+      //             fightOver = true;
+      //         }
+      //     }
+      // } else {
+      //     // F2 fights first
+      //     while(!fightOver){
+      //         f1[0] -= (f2[2] - f1[3]);
+      //         if (f1[0] <= 0){
+      //             winningFighterID = QuedFighterIds[1];
+      //             fightOver = true;
+      //         }
+      //         f2[0] -= (f1[2] - f2[3]);
+      //         if (f2[0] <= 0){
+      //             winningFighterID = QuedFighterIds[0];
+      //             fightOver = true;
+      //         }
+      //     }
+      // }
 
       //Fight is over, winner is set. Burn loser
-      if (QuedFighterIds[0] == winningFighterID){
-          burnToken(QuedFighterIds[1]);
-      } else {
-          burnToken(QuedFighterIds[0]);
-      }
+  //     if (QuedFighterIds[0] == winningFighterID){
+  //         burnToken(QuedFighterIds[1]);
+  //     } else {
+  //         burnToken(QuedFighterIds[0]);
+  //     }
 
-      //Distribute ether to winners
-      distributeEther();
-      //Reset the game state for the next round
-      resetArena();
-  }
+  //     //Distribute ether to winners
+  //     distributeEther();
+  //     //Reset the game state for the next round
+  //     resetArena();
+  // }
 
 	// Reset the Arena to get ready for next fight
   function resetArena () public {
@@ -195,26 +195,26 @@ function CreateFighter() external onlyOwner{
 	//Allow players to collect their winnings
 	function collectWinnings() public payable {
 		require(fightOver == true);
-		require(bids[msg.sender] > 0, "You did not bid on this fight")
+		require(bids[msg.sender] > 0, "You did not bid on this fight");
 		//Transfer the winner's ether to them, set balance to 0 to prevent multiple withdrawls
 		msg.sender.transfer(bids[msg.sender]);
 		delete bids[msg.sender];
 	}
 
 	function distributeEther() private {
-
+    
 		// Give fighter owner and contract owner their money
 		if(winningFighterID == QuedFighterIds[0]){
 			uint quarter = f2TotalBets/4;
 			bids[ownerOf(winningFighterID)] += quarter;
 			f2TotalBets -= quarter;
-			bids[contractOwner] += quarter;
+			//bids[contowner] += quarter;
 			f2TotalBets -= quarter;
 		}else {
 			uint quarter = f1TotalBets/4;
 			bids[ownerOf(winningFighterID)] += quarter;
 			f1TotalBets -= quarter;
-			bids[contractOwner] += quarter;
+			//bids[contractOwner] += quarter;
 			f1TotalBets -= quarter;
 		}
 
