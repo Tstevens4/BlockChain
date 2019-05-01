@@ -6,7 +6,9 @@ import "./truffle_stuff/output.sol";
 
 
 contract Fighters is ERC721, Ownable {
-  constructor() ERC721() public {}
+  constructor() ERC721() public {
+		address contractOwner = msg.sender;
+	}
   //will be used for the betting process.
   uint256 public betting_start;
   uint256 public betting_end;
@@ -36,6 +38,9 @@ contract Fighters is ERC721, Ownable {
   //pool of bids for each fighter 
   uint256 f1TotalBets;
   uint256 f2TotalBets;
+	uint f1NumberOfBidders;
+	uint f2NumberOfBidders;
+
 
   // Track winner and game state
   uint winningFighterID;
@@ -108,13 +113,15 @@ function CreateFighter() external onlyOwner{
   // after the fighters are in que start betting session
   function BettingSession(uint fighterId) public payable{
     require(QuedFighterIds.length > 1 , "The aren't Enough Fighters in the que for the Betting Session To start yet ");
-    require(msg.value > 1000, "Lowest bet  accepted is 1000 wei" );
+    require(msg.value == 100000000000000000, "Only bet size accepted is .1 ether" );
     require(betting_end > now, "The betting window has closed wait for another fight" );
     require(QuedFighterIds[0] == fighterId || QuedFighterIds[1] == fighterId, "The fighter you selected does not apper to be qued for betting");
 	  if(fighterId == QuedFighterIds[0]){
 	  	f1TotalBets += msg.value;
+			f1NumberOfBidders++;
 	  } else {
 	  	f2TotalBets += msg.value;
+			f2NumberOfBidders++;
     }
     bidders.push(msg.sender);
   }
@@ -175,9 +182,62 @@ function CreateFighter() external onlyOwner{
       resetArena();
   }
 
+	// Reset the Arena to get ready for next fight
   function resetArena () public {
       QuedFighterIds.length = 0;
       bidders.length = 0;
+			f1TotalBets = 0;
+			f2TotalBets = 0;
+			f1NumberOfBidders = 0;
+			f2NumberOfBidders = 0;
   }
 
+	//Allow players to collect their winnings
+	function collectWinnings() public payable {
+		require(fightOver == true);
+		require(bids[msg.sender] > 0, "You did not bid on this fight")
+		//Transfer the winner's ether to them, set balance to 0 to prevent multiple withdrawls
+		msg.sender.transfer(bids[msg.sender]);
+		delete bids[msg.sender];
+	}
+
+	function distributeEther() private {
+
+		// Give fighter owner and contract owner their money
+		if(winningFighterID == QuedFighterIds[0]){
+			uint quarter = f2TotalBets/4;
+			bids[ownerOf(winningFighterID)] += quarter;
+			f2TotalBets -= quarter;
+			bids[contractOwner] += quarter;
+			f2TotalBets -= quarter;
+		}else {
+			uint quarter = f1TotalBets/4;
+			bids[ownerOf(winningFighterID)] += quarter;
+			f1TotalBets -= quarter;
+			bids[contractOwner] += quarter;
+			f1TotalBets -= quarter;
+		}
+
+		for(uint i = 0; i<bidders.length;i++){
+			//Set losing player balances to 0
+			if(idsBidOn[bidders[i]] != winningFighterID){
+				bids[bidders[i]] = 0;
+			}
+			// Divide remaining losing pool amongst winners				
+			if(idsBidOn[bidders[i]] == winningFighterID){
+				// EqualShare is the losing pool divided by the number of wining betters
+				// add equalShare to each winning better's account balance
+				if(winningFighterID == QuedFighterIds[0]){
+						uint equalShare = f2TotalBets / f1NumberOfBidders;
+						bids[bidders[i]] += equalShare;
+						f2TotalBets -= equalShare;
+				}else{
+						uint equalShare = f1TotalBets / f2NumberOfBidders;
+						bids[bidders[i]] += equalShare;
+						f1TotalBets -= equalShare;
+				}
+
+			}
+		}
+	}
 }
