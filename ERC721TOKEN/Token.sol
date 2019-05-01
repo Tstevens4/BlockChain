@@ -177,4 +177,17 @@ function CreateFighter() external onlyOwner{
 
   }
 
+	//Allow players to collect their winnings
+	function collectWinnings() public payable {
+		require(fightOver == true);
+		require(bids[msg.sender > 0, "You did not bid on this fight")
+		//Transfer the winner's ether to them, set balance to 0 to prevent multiple withdrawls
+		msg.sender.transfer(bids[msg.sender]);
+		delete bids[msg.sender];
+	}
+
+	function distributeEther() private {
+
+	}
+
 }
