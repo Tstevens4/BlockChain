@@ -32,8 +32,10 @@ contract Fighters is ERC721, Ownable {
   mapping(address => uint) public bids;
   //mapping bidder addresses to qued fighter Ids
   mapping(address => uint[]) public idsBidOn;
-  //Total bids that have been made
-  uint256 TotalAmountBet;
+
+  //pool of bids for each fighter 
+  uint256 f1TotalBets;
+  uint256 f2TotalBets;
 
   // Track winner and game state
   uint winningFighterID;
@@ -52,6 +54,7 @@ function CreateFighter() external onlyOwner{
 
  // Gets you a fighter with random stats lowest as rare up to to Legendary
   function buyLegendaryFighter() public payable {
+
     
     require(msg.value >= oneEther * 2 , "you need to bid at least 2 ether to get a chance at Legendary Fighters" );
     Fighter memory _fighter = Fighter(random(40) + 160, random(7) + 4, random(30) + 20, random(15) + 2 ); 
@@ -101,16 +104,19 @@ function CreateFighter() external onlyOwner{
     }
     return true;
   }
-  // after the fighters are in queue start betting session
+  
+  // after the fighters are in que start betting session
   function BettingSession(uint fighterId) public payable{
     require(QuedFighterIds.length > 1 , "The aren't Enough Fighters in the que for the Betting Session To start yet ");
     require(msg.value > 1000, "Lowest bet  accepted is 1000 wei" );
     require(betting_end > now, "The betting window has closed wait for another fight" );
     require(QuedFighterIds[0] == fighterId || QuedFighterIds[1] == fighterId, "The fighter you selected does not apper to be qued for betting");
-    TotalAmountBet = msg.value + TotalAmountBet;
-    
+	  if(fighterId == QuedFighterIds[0]){
+	  	f1TotalBets += msg.value;
+	  } else {
+	  	f2TotalBets += msg.value;
+    }
     bidders.push(msg.sender);
-
   }
 
   function Fight() public {
