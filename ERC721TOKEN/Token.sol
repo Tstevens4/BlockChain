@@ -33,7 +33,7 @@ contract Fighters is ERC721, Ownable {
   address[] bidders;
   mapping(address => uint) public bids;
   //mapping bidder addresses to qued fighter Ids
-  mapping(address => uint[]) public idsBidOn;
+  mapping(address => uint) public idsBidOn;
 
   //pool of bids for each fighter 
   uint256 f1TotalBets;
@@ -116,7 +116,9 @@ function CreateFighter() external onlyOwner{
     require(msg.value == 100000000000000000, "Only bet size accepted is .1 ether" );
     require(betting_end > now, "The betting window has closed wait for another fight" );
     require(QuedFighterIds[0] == fighterId || QuedFighterIds[1] == fighterId, "The fighter you selected does not apper to be qued for betting");
-	  if(fighterId == QuedFighterIds[0]){
+	  require(idsBidOn[msg.sender] == 0, "You can only bid on one fighter");
+    idsBidOn[msg.sender] = fighterId;
+    if(fighterId == QuedFighterIds[0]){
 	  	f1TotalBets += msg.value;
 			f1NumberOfBidders++;
 	  } else {
@@ -204,18 +206,21 @@ function CreateFighter() external onlyOwner{
 	function distributeEther() private {
     
 		// Give fighter owner and contract owner their money
+    uint equalShare;
 		if(winningFighterID == QuedFighterIds[0]){
 			uint quarter = f2TotalBets/4;
 			bids[ownerOf(winningFighterID)] += quarter;
 			f2TotalBets -= quarter;
 			//bids[contowner] += quarter;
 			f2TotalBets -= quarter;
+      equalShare = f2TotalBets / f1NumberOfBidders;
 		}else {
 			uint quarter = f1TotalBets/4;
 			bids[ownerOf(winningFighterID)] += quarter;
 			f1TotalBets -= quarter;
 			//bids[contractOwner] += quarter;
 			f1TotalBets -= quarter;
+      equalShare = f1TotalBets / f2NumberOfBidders;
 		}
 
 		for(uint i = 0; i<bidders.length;i++){
@@ -228,11 +233,9 @@ function CreateFighter() external onlyOwner{
 				// EqualShare is the losing pool divided by the number of wining betters
 				// add equalShare to each winning better's account balance
 				if(winningFighterID == QuedFighterIds[0]){
-						uint equalShare = f2TotalBets / f1NumberOfBidders;
 						bids[bidders[i]] += equalShare;
 						f2TotalBets -= equalShare;
 				}else{
-						uint equalShare = f1TotalBets / f2NumberOfBidders;
 						bids[bidders[i]] += equalShare;
 						f1TotalBets -= equalShare;
 				}
