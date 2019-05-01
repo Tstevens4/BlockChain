@@ -33,7 +33,7 @@ contract Fighters is ERC721, Ownable {
   address[] bidders;
   mapping(address => uint) public bids;
   //mapping bidder addresses to qued fighter Ids
-  mapping(address => uint[]) public idsBidOn;
+  mapping(address => uint) public idsBidOn;
 
   //pool of bids for each fighter 
   uint256 f1TotalBets;
@@ -126,61 +126,61 @@ function CreateFighter() external onlyOwner{
     bidders.push(msg.sender);
   }
 
-  // function Fight() public {
-  //     //Choose who fights first
-  //     (uint  healthf1, uint  speedf1, uint  powerf1, uint  defensef1 )  = (getFighterFromId(QuedFighterIds[0]));
-  //     (uint  healthf2, uint  speedf2, uint  powerf2, uint  defensef2) = getFighterFromId(QuedFighterIds[1]);
+  function Fight() public {
+      //Choose who fights first
+      (uint  healthf1, uint  speedf1, uint  powerf1, uint  defensef1 )  = (getFighterFromId(QuedFighterIds[0]));
+      (uint  healthf2, uint  speedf2, uint  powerf2, uint  defensef2) = getFighterFromId(QuedFighterIds[1]);
 
-  //     fightOver = false;
+      fightOver = false;
 
       // Access each attribute via the array
       // Health - 0
       // Speed - 1
       // Attack - 2
       // Defense - 3
-      // if (speedf1> speedf2){
-      //     // F1 fights first
-      //     while (!fightOver){
-      //         f2[0] -= (f1[2] - f2[3]);
-      //         if (f2[0] <= 0){
-      //             //Fighter is defeated
-      //             winningFighterID = QuedFighterIds[0];
-      //             fightOver = true;
-      //         }
-      //         f1[0] -= (f2[2] - f1[3]);
-      //         if (f1[0] <= 0){
-      //             winningFighterID = QuedFighterIds[1];
-      //             fightOver = true;
-      //         }
-      //     }
-      // } else {
-      //     // F2 fights first
-      //     while(!fightOver){
-      //         f1[0] -= (f2[2] - f1[3]);
-      //         if (f1[0] <= 0){
-      //             winningFighterID = QuedFighterIds[1];
-      //             fightOver = true;
-      //         }
-      //         f2[0] -= (f1[2] - f2[3]);
-      //         if (f2[0] <= 0){
-      //             winningFighterID = QuedFighterIds[0];
-      //             fightOver = true;
-      //         }
-      //     }
-      // }
+      if (speedf1> speedf2){
+          // F1 fights first
+          while (!fightOver){
+              healthf2 -= (powerf1 - defensef2);
+              if (healthf2 <= 0){
+                  //Fighter is defeated
+                  winningFighterID = QuedFighterIds[0];
+                  fightOver = true;
+              }
+              healthf1 -= (powerf2 - defensef1 );
+              if (healthf1 <= 0){
+                  winningFighterID = QuedFighterIds[1];
+                  fightOver = true;
+              }
+          }
+      } else {
+          // F2 fights first
+          while(!fightOver){
+              healthf1 -= (powerf2 - defensef1 );
+              if (healthf1 <= 0){
+                  winningFighterID = QuedFighterIds[1];
+                  fightOver = true;
+              }
+              healthf2 -= (powerf1 - defensef2);
+              if (healthf2 <= 0){
+                  winningFighterID = QuedFighterIds[0];
+                  fightOver = true;
+              }
+          }
+      }
 
-      //Fight is over, winner is set. Burn loser
-  //     if (QuedFighterIds[0] == winningFighterID){
-  //         burnToken(QuedFighterIds[1]);
-  //     } else {
-  //         burnToken(QuedFighterIds[0]);
-  //     }
+      // Fight is over, winner is set. Burn loser
+      if (QuedFighterIds[0] == winningFighterID){
+          burnToken(QuedFighterIds[1]);
+      } else {
+          burnToken(QuedFighterIds[0]);
+      }
 
-  //     //Distribute ether to winners
-  //     distributeEther();
-  //     //Reset the game state for the next round
-  //     resetArena();
-  // }
+      //Distribute ether to winners
+      distributeEther();
+      //Reset the game state for the next round
+      resetArena();
+  }
 
 	// Reset the Arena to get ready for next fight
   function resetArena () public {
