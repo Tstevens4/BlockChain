@@ -1,3 +1,9 @@
+pragma solidity ^0.5.2;
+
+import './node_modules/openzeppelin-solidity/contracts/token/ERC721/ERC721.sol';
+import './node_modules/openzeppelin-solidity/contracts/ownership/Ownable.sol';
+
+
 contract Fighters is ERC721, Ownable {
   constructor() ERC721() public {
 		//address contractOwner = msg.sender;
@@ -137,7 +143,7 @@ function test_log() public {
     bidders.push(msg.sender);
   }
 
-  function Fight() public payable {
+  function Fight() public payable returns(uint ) {
       //Choose who fights first
       (uint  healthf1, uint  speedf1, uint  powerf1, uint  defensef1 )  = (getFighterFromId(QuedFighterIds[0]));
       (uint  healthf2, uint  speedf2, uint  powerf2, uint  defensef2) = getFighterFromId(QuedFighterIds[1]);
@@ -154,19 +160,23 @@ function test_log() public {
       if(f1Score > f2Score){
           winningFighterID = QuedFighterIds[0];
           fightOver = true;
+          return winningFighterID;
       }
       if(f1Score < f2Score){
           winningFighterID = QuedFighterIds[1];
           fightOver = true;
+          return winningFighterID;
       }
       if(f1Score == f2Score){
           if (speedf1 >= speedf2){
               winningFighterID = QuedFighterIds[0];
               fightOver = true;
+                return winningFighterID;
           }
           if (speedf1 < speedf2){
               winningFighterID = QuedFighterIds[1];
               fightOver = true;
+              return winningFighterID;
           }
       }
       
