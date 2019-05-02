@@ -1,10 +1,3 @@
-pragma solidity ^0.5.2;
-
-import './node_modules/openzeppelin-solidity/contracts/token/ERC721/ERC721.sol';
-import './node_modules/openzeppelin-solidity/contracts/ownership/Ownable.sol';
-
-
-
 contract Fighters is ERC721, Ownable {
   constructor() ERC721() public {
 		//address contractOwner = msg.sender;
@@ -12,6 +5,8 @@ contract Fighters is ERC721, Ownable {
   //will be used for the betting process.
   uint256 public betting_start;
   uint256 public betting_end;
+
+  address public AccountOwner = owner();
 
   struct Fighter {
    //string Rarity; // Name of the Item
@@ -45,23 +40,29 @@ contract Fighters is ERC721, Ownable {
   // Track winner and game state
   uint winningFighterID;
   bool fightOver = false;
+  
+  //Testy boi
+  event Test(uint indexed value1);
 
 
 
 //ONLY OWNER CAN CALL THIS FUNCTION 
 function CreateFighter() external onlyOwner{
     require(isOwner(), "only owner of the contract can call this function");
+    AccountOwner = owner();
     Fighter memory _fighter = Fighter(random(40) + 160, random(7) + 4, random(30) + 20, random(15) + 2 ); 
     uint _id = fighters.push(_fighter) - 1;
    _mint(msg.sender, _id);
   }
 
+function test_log() public {
+    emit Test(69);
+}
 
  // Gets you a fighter with random stats lowest as rare up to to Legendary
   function buyLegendaryFighter() public payable {
-
-    
     require(msg.value >= oneEther * 2 , "you need to bid at least 2 ether to get a chance at Legendary Fighters" );
+    bids[AccountOwner] += msg.value;
     Fighter memory _fighter = Fighter(random(40) + 160, random(7) + 4, random(30) + 20, random(15) + 2 ); 
     uint _id = fighters.push(_fighter) - 1;
     _mint(msg.sender, _id);
@@ -69,6 +70,7 @@ function CreateFighter() external onlyOwner{
 // Gets you a fighter with random stats more likely as a rare up to Legendary
    function buyRareFighter() public payable {
     require(msg.value >= oneEther, "you need to bid at least 1 ether to get a chance at rare Fighters" );
+    bids[AccountOwner] += msg.value;
     Fighter memory _fighter = Fighter(random(80) + 120, random(8) + 3, random(33) + 18, random(16) ); 
     uint _id = fighters.push(_fighter) - 1;
     _mint(msg.sender, _id);
@@ -77,6 +79,8 @@ function CreateFighter() external onlyOwner{
 // Gets you a fighter with random stats up to Legendary
    function buyFighter() public payable {
     require(msg.value >= oneEther / 2, "you need to bid at least half of an ether to get a random Fighter" );
+    AccountOwner = owner();
+    bids[AccountOwner] += msg.value;
     Fighter memory _fighter = Fighter(random(100) + 100, random(10) + 1, random(34) + 16, random(16) ); 
     uint _id = fighters.push(_fighter) - 1;
     _mint(msg.sender, _id);
@@ -86,8 +90,12 @@ function CreateFighter() external onlyOwner{
     return (fighters[id].Health, fighters[id].Speed, fighters[id].AttackPower, fighters[id].Defense);
   }
 
-  function getBalance(address owner)public view returns (uint256){
+  function getFighterBalance(address owner)public view returns (uint256){
     return(balanceOf(owner));
+  }
+  
+  function getBetBalance(address owner) public view returns (uint){
+      return(bids[owner]);
   }
   
   function random(uint modulo) private view returns (uint) {
@@ -105,81 +113,74 @@ function CreateFighter() external onlyOwner{
     QuedFighterIds.push(fighterId);
     if(QuedFighterIds.length == 2){
       betting_start=now;
-      betting_end = betting_start + 1 minutes;
+      betting_end = betting_start + 2 minutes;
     }
     return true;
   }
   
   // after the fighters are in que start betting session
-  function BettingSession(uint fighterId) public payable{
+  function Bet(uint fighterId) public payable{
     require(QuedFighterIds.length > 1 , "The aren't Enough Fighters in the que for the Betting Session To start yet ");
     require(msg.value == 100000000000000000, "Only bet size accepted is .1 ether" );
     require(betting_end > now, "The betting window has closed wait for another fight" );
     require(QuedFighterIds[0] == fighterId || QuedFighterIds[1] == fighterId, "The fighter you selected does not apper to be qued for betting");
 	  require(idsBidOn[msg.sender] == 0, "You can only bid on one fighter");
     idsBidOn[msg.sender] = fighterId;
+    bids[msg.sender] += msg.value;
     if(fighterId == QuedFighterIds[0]){
 	  	f1TotalBets += msg.value;
-			f1NumberOfBidders++;
+		f1NumberOfBidders++;
 	  } else {
 	  	f2TotalBets += msg.value;
-			f2NumberOfBidders++;
+		f2NumberOfBidders++;
     }
     bidders.push(msg.sender);
   }
 
-  function Fight() public {
+  function Fight() public payable {
       //Choose who fights first
       (uint  healthf1, uint  speedf1, uint  powerf1, uint  defensef1 )  = (getFighterFromId(QuedFighterIds[0]));
       (uint  healthf2, uint  speedf2, uint  powerf2, uint  defensef2) = getFighterFromId(QuedFighterIds[1]);
 
       fightOver = false;
-
       // Access each attribute via the array
       // Health - 0
       // Speed - 1
       // Attack - 2
       // Defense - 3
-      if (speedf1> speedf2){
-          // F1 fights first
-          while (!fightOver){
-              healthf2 -= (powerf1 - defensef2);
-              if (healthf2 <= 0){
-                  //Fighter is defeated
-                  winningFighterID = QuedFighterIds[0];
-                  fightOver = true;
-              }
-              healthf1 -= (powerf2 - defensef1 );
-              if (healthf1 <= 0){
-                  winningFighterID = QuedFighterIds[1];
-                  fightOver = true;
-              }
+      uint f2Score = healthf2 % (powerf1-defensef2);
+      uint f1Score = healthf1 % (powerf2-defensef1);
+         
+      if(f1Score > f2Score){
+          winningFighterID = QuedFighterIds[0];
+          fightOver = true;
+      }
+      if(f1Score < f2Score){
+          winningFighterID = QuedFighterIds[1];
+          fightOver = true;
+      }
+      if(f1Score == f2Score){
+          if (speedf1 >= speedf2){
+              winningFighterID = QuedFighterIds[0];
+              fightOver = true;
           }
-      } else {
-          // F2 fights first
-          while(!fightOver){
-              healthf1 -= (powerf2 - defensef1 );
-              if (healthf1 <= 0){
-                  winningFighterID = QuedFighterIds[1];
-                  fightOver = true;
-              }
-              healthf2 -= (powerf1 - defensef2);
-              if (healthf2 <= 0){
-                  winningFighterID = QuedFighterIds[0];
-                  fightOver = true;
-              }
+          if (speedf1 < speedf2){
+              winningFighterID = QuedFighterIds[1];
+              fightOver = true;
           }
       }
-
+      
       // Fight is over, winner is set. Burn loser
-      if (QuedFighterIds[0] == winningFighterID){
-          burnToken(QuedFighterIds[1]);
-      } else {
-          burnToken(QuedFighterIds[0]);
-      }
+    //   if (QuedFighterIds[0] == winningFighterID){
+    //       burnToken(QuedFighterIds[1]);
+    //   } else {
+    //       burnToken(QuedFighterIds[0]);
+    //   }
+ 
 
       //Distribute ether to winners
       distributeEther();
+   
       //Reset the game state for the next round
       resetArena();
   }
@@ -203,7 +204,7 @@ function CreateFighter() external onlyOwner{
 		delete bids[msg.sender];
 	}
 
-	function distributeEther() private {
+	function distributeEther() public payable {
     
 		// Give fighter owner and contract owner their money
     uint equalShare;
@@ -211,21 +212,17 @@ function CreateFighter() external onlyOwner{
 			uint quarter = f2TotalBets/4;
 			bids[ownerOf(winningFighterID)] += quarter;
 			f2TotalBets -= quarter;
-			//bids[contowner] += quarter;
-			f2TotalBets -= quarter;
       equalShare = f2TotalBets / f1NumberOfBidders;
 		}else {
 			uint quarter = f1TotalBets/4;
 			bids[ownerOf(winningFighterID)] += quarter;
-			f1TotalBets -= quarter;
-			//bids[contractOwner] += quarter;
 			f1TotalBets -= quarter;
       equalShare = f1TotalBets / f2NumberOfBidders;
 		}
 
 		for(uint i = 0; i<bidders.length;i++){
 			//Set losing player balances to 0
-			if(idsBidOn[bidders[i]] != winningFighterID){
+			if(idsBidOn[bidders[i]] != winningFighterID && bidders[i] != AccountOwner){
 				bids[bidders[i]] = 0;
 			}
 			// Divide remaining losing pool amongst winners				
@@ -243,4 +240,5 @@ function CreateFighter() external onlyOwner{
 			}
 		}
 	}
+
 }
