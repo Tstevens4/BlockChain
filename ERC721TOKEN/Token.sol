@@ -6,7 +6,7 @@ import './node_modules/openzeppelin-solidity/contracts/ownership/Ownable.sol';
 
 contract Fighters is ERC721, Ownable {
   constructor() ERC721() public {
-		//address contractOwner = msg.sender;
+		AccountOwner = owner();
 	}
   //will be used for the betting process.
   uint256 public betting_start;
@@ -41,8 +41,6 @@ contract Fighters is ERC721, Ownable {
   uint256 f2TotalBets;
 	uint f1NumberOfBidders;
 	uint f2NumberOfBidders;
-
-
   // Track winner and game state
   uint winningFighterID;
   bool fightOver = false;
@@ -50,20 +48,13 @@ contract Fighters is ERC721, Ownable {
   //Testy boi
   event Test(uint indexed value1);
 
-
-
 //ONLY OWNER CAN CALL THIS FUNCTION 
 function CreateFighter() external onlyOwner{
     require(isOwner(), "only owner of the contract can call this function");
-    AccountOwner = owner();
     Fighter memory _fighter = Fighter(random(40) + 160, random(7) + 4, random(30) + 20, random(15) + 2 ); 
     uint _id = fighters.push(_fighter) - 1;
    _mint(msg.sender, _id);
   }
-
-function test_log() public {
-    emit Test(69);
-}
 
  // Gets you a fighter with random stats lowest as rare up to to Legendary
   function buyLegendaryFighter() public payable {
@@ -112,6 +103,7 @@ function test_log() public {
     _burn(msg.sender, tokenId);
     return true;
   }
+
   //Start the Fight by setting your fighter as a registered fighter
   function RegisterFighter(uint fighterId) public returns(bool){
     require(QuedFighterIds.length < 3, "There is already 2 Fighters In que the fight will start soon");
@@ -154,50 +146,42 @@ function test_log() public {
       // Speed - 1
       // Attack - 2
       // Defense - 3
+      // Calculate the winning fighter
       uint f2Score = healthf2 % (powerf1-defensef2);
-      uint f1Score = healthf1 % (powerf2-defensef1);
-         
+      uint f1Score = healthf1 % (powerf2-defensef1);         
       if(f1Score > f2Score){
           winningFighterID = QuedFighterIds[0];
-          fightOver = true;
-         
+          fightOver = true;         
       }
       if(f1Score < f2Score){
           winningFighterID = QuedFighterIds[1];
-          fightOver = true;
-          
+          fightOver = true;          
       }
       if(f1Score == f2Score){
           if (speedf1 >= speedf2){
               winningFighterID = QuedFighterIds[0];
-              fightOver = true;
-                
+              fightOver = true;                
           }
           if (speedf1 < speedf2){
               winningFighterID = QuedFighterIds[1];
               fightOver = true;
-            
           }
       }
-      
       // Fight is over, winner is set. Burn loser
     //   if (QuedFighterIds[0] == winningFighterID){
     //       burnToken(QuedFighterIds[1]);
     //   } else {
     //       burnToken(QuedFighterIds[0]);
     //   }
- 
-
       //Distribute ether to winners
       distributeEther();
-   
       //Reset the game state for the next round
       resetArena();
       return winningFighterID;
   }
 
 	// Reset the Arena to get ready for next fight
-  function resetArena () public {
+  function resetArena () internal {
       QuedFighterIds.length = 0;
       bidders.length = 0;
 			f1TotalBets = 0;
@@ -215,9 +199,8 @@ function test_log() public {
 		delete bids[msg.sender];
 	}
 
-	function distributeEther() public payable {
-    
-		// Give fighter owner and contract owner their money
+	function distributeEther() internal {
+		// Give fighter owner their money
     uint equalShare;
 		if(winningFighterID == QuedFighterIds[0]){
 			uint quarter = f2TotalBets/4;
@@ -230,7 +213,7 @@ function test_log() public {
 			f1TotalBets -= quarter;
       equalShare = f1TotalBets / f2NumberOfBidders;
 		}
-
+    // Loop for seeting account balances to correct amount
 		for(uint i = 0; i<bidders.length;i++){
 			//Set losing player balances to 0
 			if(idsBidOn[bidders[i]] != winningFighterID && bidders[i] != AccountOwner){
@@ -247,9 +230,7 @@ function test_log() public {
 						bids[bidders[i]] += equalShare;
 						f1TotalBets -= equalShare;
 				}
-
 			}
 		}
 	}
-
 }

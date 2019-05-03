@@ -622,12 +622,14 @@ contract Ownable {
 
 // File: Token.sol
 
-pragma solidity ^0.5.2;
+pragma solidity ^0.5.2;
+
+
 
 
 contract Fighters is ERC721, Ownable {
   constructor() ERC721() public {
-		//address contractOwner = msg.sender;
+		AccountOwner = owner();
 	}
   //will be used for the betting process.
   uint256 public betting_start;
@@ -671,12 +673,11 @@ contract Fighters is ERC721, Ownable {
   //Testy boi
   event Test(uint indexed value1);
 
-
+// intialize the owner to be the address of contract owner 
 
 //ONLY OWNER CAN CALL THIS FUNCTION 
 function CreateFighter() external onlyOwner{
     require(isOwner(), "only owner of the contract can call this function");
-    AccountOwner = owner();
     Fighter memory _fighter = Fighter(random(40) + 160, random(7) + 4, random(30) + 20, random(15) + 2 ); 
     uint _id = fighters.push(_fighter) - 1;
    _mint(msg.sender, _id);
@@ -818,7 +819,7 @@ function test_log() public {
   }
 
 	// Reset the Arena to get ready for next fight
-  function resetArena () public {
+  function resetArena () internal {
       QuedFighterIds.length = 0;
       bidders.length = 0;
 			f1TotalBets = 0;
@@ -836,7 +837,7 @@ function test_log() public {
 		delete bids[msg.sender];
 	}
 
-	function distributeEther() public payable {
+	function distributeEther() internal {
     
 		// Give fighter owner and contract owner their money
     uint equalShare;
